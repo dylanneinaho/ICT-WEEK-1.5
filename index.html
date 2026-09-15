@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Format Frenzy — Word Document Design Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF1F8;
+    --bg-2:#E1E6F2;
+    --panel:#FFFFFF;
+    --ink:#1E2438;
+    --sub:#5B6480;
+    --line:#CBD3E6;
+    --indigo:#3E4FE0;
+    --indigo-dk:#2B38B3;
+    --amber:#F0A93A;
+    --teal:#1FA398;
+    --teal-dk:#127A71;
+    --danger:#D6483C;
+    --a-color:#3E4FE0;
+    --b-color:#F0A93A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:26px 16px 60px;
+  }
+  .stage{ width:100%; max-width:720px; }
+  h1,h2,h3{ font-family:'Space Grotesk', sans-serif; margin:0; }
+  .title-row{ text-align:center; margin-bottom:20px; }
+  .title-row h1{ font-size:clamp(26px,5.5vw,36px); color:var(--indigo-dk); letter-spacing:-.02em; }
+  .title-row p{ margin:5px 0 0; color:var(--sub); font-size:14.5px; }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+    box-shadow: 0 1px 0 var(--line), 0 10px 24px -18px rgba(30,36,56,.35);
+  }
+  .panel + .panel{ margin-top:14px; }
+  button{ font-family:'Inter', sans-serif; cursor:pointer; }
+
+  /* ribbon toolbar motif */
+  .ribbon{
+    display:flex; gap:4px; padding:4px; background:var(--bg-2); border-radius:10px; margin-bottom:18px;
+  }
+  .ribbon .tab{
+    flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12.5px; font-weight:600;
+    color:var(--sub); background:transparent;
+  }
+  .ribbon .tab.active{ background:var(--panel); color:var(--indigo-dk); box-shadow:0 1px 0 var(--line); }
+
+  /* ---------- SETUP ---------- */
+  .mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:480px){ .mode-grid{ grid-template-columns:1fr; } }
+  .mode-btn{
+    border:1.5px solid var(--line); background:var(--bg); border-radius:14px; padding:18px 14px; text-align:left;
+    transition: border-color .12s, transform .12s;
+  }
+  .mode-btn:hover{ transform:translateY(-2px); }
+  .mode-btn.selected{ border-color:var(--indigo); background:#EDEFFC; }
+  .mode-btn .emoji{ font-size:26px; }
+  .mode-btn h3{ font-size:18px; margin-top:6px; }
+  .mode-btn p{ margin:4px 0 0; font-size:13px; color:var(--sub); line-height:1.4; }
+
+  label.field-label{ display:block; font-size:12.5px; font-weight:600; color:var(--sub); margin:18px 0 6px; text-transform:none;}
+  .team-inputs{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .team-inputs input{
+    width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); font-size:15px; background:#fff;
+  }
+  .team-inputs .ta{ border-color:var(--a-color); }
+  .team-inputs .tb{ border-color:var(--b-color); }
+
+  .timer-toggle{ display:flex; gap:10px; }
+  .timer-opt{ flex:1; padding:11px; border-radius:12px; border:1.5px solid var(--line); background:#fff; text-align:center; font-weight:700; font-size:16px; }
+  .timer-opt.selected{ border-color:var(--amber); background:#FDF1DC; color:#8A5B10; }
+
+  .bank-row{ display:flex; align-items:center; justify-content:space-between; margin-top:18px; }
+  .bank-row span{ font-size:13px; color:var(--sub); }
+  .link-btn{ background:none; border:none; color:var(--indigo-dk); font-weight:600; font-size:13px; text-decoration:underline; padding:0; }
+
+  .start-btn{
+    width:100%; margin-top:22px; padding:15px; border:none; border-radius:12px; background:var(--indigo);
+    color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;
+  }
+  .start-btn:hover{ background:var(--indigo-dk); }
+
+  /* ---------- DOCUMENT CANVAS (the hero element) ---------- */
+  .doc-row{ display:flex; gap:14px; justify-content:center; margin-bottom:16px; }
+  .doc-slot{ flex:1; max-width:220px; }
+  .doc-slot .doc-owner{ text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; margin-bottom:6px; }
+  .doc-slot.a .doc-owner{ color:var(--a-color); }
+  .doc-slot.b .doc-owner{ color:var(--b-color); }
+  .page{
+    position:relative; aspect-ratio:3/4; background:#fff; border:1.5px solid var(--line); border-radius:6px;
+    overflow:hidden; box-shadow:0 2px 6px rgba(30,36,56,.12);
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .page .p-header{ height:0; background:var(--indigo); color:#fff; font-size:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; transition:height .35s ease; }
+  .page.has-header .p-header{ height:16px; }
+  .page .p-body{ flex:1; position:relative; }
+  .page .p-watermark{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:800; color:rgba(62,79,224,0); transform:rotate(-28deg);
+    letter-spacing:1px; transition:color .35s ease;
+  }
+  .page.has-watermark .p-watermark{ color:rgba(62,79,224,.18); }
+  .page.has-color .p-body{ background:#EAF3F2; transition:background .35s ease; }
+  .page.has-border{ border:3px solid var(--teal); border-style:dashed; }
+  .page .p-pagenum{
+    position:absolute; bottom:4px; right:6px; font-size:8px; font-weight:700; color:var(--sub); opacity:0; transition:opacity .3s ease;
+  }
+  .page.has-pagenum .p-pagenum{ opacity:1; }
+  .page .p-footer{ height:0; background:var(--amber); color:#fff; font-size:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; transition:height .35s ease; }
+  .page.has-footer .p-footer{ height:14px; }
+  .doc-progress{ text-align:center; font-size:11.5px; color:var(--sub); margin-top:6px; }
+
+  /* ---------- HUD ---------- */
+  .hud{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; }
+  .timer-dial{ width:58px; height:58px; border-radius:50%; background:conic-gradient(var(--amber) calc(var(--pct,100)*1%), #E7EAF4 0); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .timer-dial span{ width:47px; height:47px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px; }
+  .score-box{ text-align:center; }
+  .score-box .num{ font-family:'Space Grotesk',sans-serif; font-size:24px; line-height:1; }
+  .score-box .lbl{ font-size:10.5px; color:var(--sub); text-transform:uppercase; letter-spacing:.4px; }
+
+  .turn-banner{ text-align:center; font-family:'Space Grotesk',sans-serif; font-size:13.5px; padding:6px 10px; border-radius:20px; margin-bottom:14px; }
+  .turn-banner.a{ background:#EDEFFC; color:var(--indigo-dk); }
+  .turn-banner.b{ background:#FDF1DC; color:#8A5B10; }
+
+  .streak-line{ text-align:center; font-size:13px; color:var(--sub); margin-bottom:10px; }
+  .streak-line b{ color:var(--amber); }
+  .unlock-line{ text-align:center; font-size:13px; color:var(--sub); margin-bottom:10px; }
+  .unlock-line b{ color:var(--teal-dk); }
+
+  /* question */
+  .cat-badge{ display:inline-block; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:20px; margin-bottom:10px; }
+  .cat-badge.watermark{ background:#EDEFFC; color:var(--indigo-dk); }
+  .cat-badge.color{ background:#E6F5F3; color:var(--teal-dk); }
+  .cat-badge.border{ background:#FCEBE9; color:#A83A2E; }
+  .cat-badge.pagenum{ background:#FDF1DC; color:#8A5B10; }
+  .cat-badge.headerfooter{ background:#EFE8F9; color:#6A3FA0; }
+  .prompt{ font-family:'Space Grotesk',sans-serif; font-size:20px; line-height:1.3; margin:2px 0 16px; }
+  .options{ display:grid; gap:9px; }
+  .opt-btn{ text-align:left; padding:12px 15px; border-radius:11px; border:1.5px solid var(--line); background:#fff; font-size:14.5px; font-weight:500; }
+  .opt-btn:hover{ border-color:var(--amber); }
+  .opt-btn.correct{ background:#E6F5F3; border-color:var(--teal); }
+  .opt-btn.wrong{ background:#FCEBE9; border-color:var(--danger); }
+  .opt-btn:disabled{ cursor:default; }
+  .feedback{ text-align:center; font-family:'Space Grotesk',sans-serif; font-size:14px; margin-top:12px; min-height:18px; }
+  .feedback.good{ color:var(--teal-dk); }
+  .feedback.bad{ color:var(--danger); }
+
+  /* results */
+  .results h2{ text-align:center; font-size:24px; color:var(--indigo-dk); }
+  .results .sub{ text-align:center; color:var(--sub); margin-top:4px; font-size:14px; }
+  .stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; }
+  .stat{ background:var(--bg); border-radius:12px; padding:13px 6px; text-align:center; }
+  .stat .num{ font-family:'Space Grotesk',sans-serif; font-size:20px; }
+  .stat .lbl{ font-size:10.5px; color:var(--sub); margin-top:2px; }
+  .again-row{ display:flex; gap:10px; margin-top:4px; }
+  .again-row button{ flex:1; padding:13px; border-radius:11px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14.5px; border:none; }
+  .again-row .primary{ background:var(--indigo); color:#fff; }
+  .again-row .secondary{ background:var(--bg); color:var(--ink); border:1.5px solid var(--line); }
+
+  /* editor modal */
+  .modal-bg{ position:fixed; inset:0; background:rgba(30,36,56,.55); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto; z-index:50; }
+  .modal-bg.open{ display:flex; }
+  .modal{ background:#fff; border-radius:16px; padding:22px; max-width:560px; width:100%; }
+  .modal h2{ font-size:19px; color:var(--indigo-dk); }
+  .modal .close-x{ float:right; background:none; border:none; font-size:20px; color:var(--sub); }
+  .q-item{ border:1.5px solid var(--line); border-radius:11px; padding:12px; margin-top:12px; }
+  .q-item .qtop{ display:flex; justify-content:space-between; gap:8px; }
+  .q-item .qtop p{ margin:0; font-size:13.5px; font-weight:600; flex:1; }
+  .q-item .cat{ font-size:11px; color:var(--sub); }
+  .q-item .del-btn{ background:none; border:none; color:var(--danger); font-size:12px; font-weight:700; }
+  .edit-form{ margin-top:16px; border-top:1.5px dashed var(--line); padding-top:16px; }
+  .edit-form label{ display:block; font-size:12px; font-weight:600; color:var(--sub); margin:10px 0 4px; }
+  .edit-form input[type=text], .edit-form select{ width:100%; padding:9px 10px; border-radius:9px; border:1.5px solid var(--line); font-size:14px; }
+  .opt-row{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .opt-row input[type=text]{ flex:1; }
+  .add-btn{ width:100%; margin-top:14px; padding:11px; border-radius:10px; border:none; background:var(--amber); color:#3a2705; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+  .done-btn{ width:100%; margin-top:16px; padding:12px; border-radius:10px; border:none; background:var(--ink); color:#fff; font-weight:700; font-family:'Space Grotesk',sans-serif; font-size:14.5px; }
+  .small-note{ font-size:12px; color:#8b93ab; margin-top:4px; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="title-row">
+    <h1>Format Frenzy</h1>
+    <p>Watermarks • Page Color • Borders • Page Numbers • Header &amp; Footer — a Grade 6 ICT review</p>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup" class="panel">
+    <div class="ribbon">
+      <div class="tab active">Design</div>
+      <div class="tab">Insert</div>
+      <div class="tab">Layout</div>
+    </div>
+    <h3 style="font-size:15px;color:var(--sub);font-family:'Inter';font-weight:600;">Choose how to play</h3>
+    <div class="mode-grid" style="margin-top:10px;">
+      <button class="mode-btn selected" id="mode-solo" onclick="selectMode('solo')">
+        <div class="emoji">🖥️</div>
+        <h3>Design Dash</h3>
+        <p>Solo play. Answer correctly to build your own fully-formatted document.</p>
+      </button>
+      <button class="mode-btn" id="mode-team" onclick="selectMode('team')">
+        <div class="emoji">📄</div>
+        <h3>Format Face-off</h3>
+        <p>Two teams race, turn by turn, to finish their document first.</p>
+      </button>
+    </div>
+
+    <div id="team-name-row" class="hidden">
+      <label class="field-label">Team names</label>
+      <div class="team-inputs">
+        <input class="ta" id="team1name" type="text" value="Team Ctrl" maxlength="16">
+        <input class="tb" id="team2name" type="text" value="Team Alt" maxlength="16">
+      </div>
+    </div>
+
+    <label class="field-label">Round timer</label>
+    <div class="timer-toggle">
+      <button class="timer-opt" id="t1min" onclick="selectTimer(1)">1:00</button>
+      <button class="timer-opt selected" id="t2min" onclick="selectTimer(2)">2:00</button>
+    </div>
+
+    <div class="bank-row">
+      <span id="bank-count">18 questions ready in the bank</span>
+      <button class="link-btn" onclick="openEditor()">Edit questions</button>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="panel hidden">
+    <div class="hud">
+      <div class="score-box" id="hud-left"><div class="num" id="left-num">0</div><div class="lbl" id="left-lbl">Score</div></div>
+      <div class="timer-dial" style="--pct:100"><span id="timer-num">2:00</span></div>
+      <div class="score-box hidden" id="hud-right"><div class="num" id="right-num">0</div><div class="lbl" id="right-lbl">Score</div></div>
+    </div>
+
+    <div id="doc-row" class="doc-row">
+      <div class="doc-slot a" id="slot-a">
+        <div class="doc-owner" id="a-name">You</div>
+        <div class="page" id="page-a">
+          <div class="p-header" id="header-a">NAME · SECTION</div>
+          <div class="p-body"><div class="p-watermark">SAMPLE</div><div class="p-pagenum">1</div></div>
+          <div class="p-footer" id="footer-a">09.15.26</div>
+        </div>
+      </div>
+      <div class="doc-slot b hidden" id="slot-b">
+        <div class="doc-owner" id="b-name">Team B</div>
+        <div class="page" id="page-b">
+          <div class="p-header" id="header-b">NAME · SECTION</div>
+          <div class="p-body"><div class="p-watermark">SAMPLE</div><div class="p-pagenum">1</div></div>
+          <div class="p-footer" id="footer-b">09.15.26</div>
+        </div>
+      </div>
+    </div>
+    <div class="doc-progress" id="doc-progress-solo">Features applied: 0 / 5</div>
+
+    <div id="turn-block" class="hidden">
+      <div class="turn-banner a" id="turn-banner">Team A's turn</div>
+    </div>
+    <div id="streak-block">
+      <div class="streak-line">Current streak: <b id="streak-num">0</b></div>
+    </div>
+
+    <div id="q-block">
+      <span class="cat-badge" id="cat-badge">Category</span>
+      <div class="prompt" id="q-prompt">Loading…</div>
+      <div class="options" id="q-options"></div>
+      <div class="feedback" id="q-feedback"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="panel results hidden">
+    <h2 id="res-title">Time's up!</h2>
+    <p class="sub" id="res-sub">Here's how it went.</p>
+    <div class="stat-grid" id="res-stats"></div>
+    <div class="again-row">
+      <button class="primary" onclick="location.reload()">Play again</button>
+      <button class="secondary" onclick="backToSetup()">Change settings</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- EDITOR MODAL -->
+<div class="modal-bg" id="editor-bg">
+  <div class="modal">
+    <button class="close-x" onclick="closeEditor()">✕</button>
+    <h2>Edit Question Bank</h2>
+    <p class="small-note">Changes apply to this session only.</p>
+    <div id="q-list"></div>
+
+    <div class="edit-form">
+      <h3 style="font-size:14.5px;">Add a new question</h3>
+      <label>Category</label>
+      <select id="new-cat">
+        <option value="watermark">Watermark</option>
+        <option value="color">Page Color</option>
+        <option value="border">Page Borders</option>
+        <option value="pagenum">Page Numbers</option>
+        <option value="headerfooter">Header &amp; Footer</option>
+      </select>
+      <label>Question prompt</label>
+      <input type="text" id="new-prompt" placeholder="e.g. Which tab holds the Watermark option?">
+      <label>Answer options (mark the correct one)</label>
+      <div id="new-opts"></div>
+      <button class="add-btn" style="background:var(--bg-2);color:var(--ink);margin-top:8px;" onclick="addOptionField()">+ Add option</button>
+      <button class="add-btn" onclick="saveNewQuestion()">Save question</button>
+    </div>
+
+    <button class="done-btn" onclick="closeEditor()">Done editing</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- DEFAULT QUESTION BANK ---------------- */
+let questions = [
+  {cat:'watermark', prompt:'Which ribbon tab do you click to insert a watermark?', options:['Home','Design','Review','Insert'], correct:1},
+  {cat:'watermark', prompt:'A watermark that says "DRAFT" is used to…', options:['Delete a document','Mark a document\'s status','Change the font','Add a page number'], correct:1},
+  {cat:'watermark', prompt:'Besides built-in options, Word also lets you insert a…', options:['Custom text watermark','Custom page size only','New font only','Sound effect'], correct:0},
+  {cat:'watermark', prompt:'Watermarks appear…', options:['Only on page 1','Behind the text on every page','On top of images only','Only when printed'], correct:1},
+  {cat:'color', prompt:'Where do you find the Page Color option?', options:['Insert tab','Design tab','References tab','View tab'], correct:1},
+  {cat:'color', prompt:'A light, soft page color is usually best for…', options:['A formal document like a certificate','Hiding all the text','Making text disappear','Printing in black and white only'], correct:0},
+  {cat:'color', prompt:'Page color changes the…', options:['Font style','Background of the whole page','Watermark text','Header height'], correct:1},
+  {cat:'border', prompt:'Where do you open Page Borders settings?', options:['Design tab','Home tab','Mailings tab','View tab'], correct:0},
+  {cat:'border', prompt:'Which of these is an option when customizing a page border?', options:['Font size','Border style, width, and art','Paragraph spacing','Watermark opacity'], correct:1},
+  {cat:'border', prompt:'A decorative "art" border option is often used for…', options:['Certificates and invitations','Deleting pages','Code files','Spreadsheets'], correct:0},
+  {cat:'pagenum', prompt:'Which tab do you use to insert page numbers?', options:['Insert tab','Home tab','Mailings tab','Review tab'], correct:0},
+  {cat:'pagenum', prompt:'Page numbers can be placed at the…', options:['Top, bottom, or margins of the page','Center of every paragraph','Inside a watermark only','Left border only'], correct:0},
+  {cat:'pagenum', prompt:'Page number FORMAT can be changed to…', options:['Roman numerals or letters','Only bold numbers','A different font color for text','A watermark'], correct:0},
+  {cat:'pagenum', prompt:'Page numbers are most helpful for…', options:['One-page flyers','Long, multi-page documents like reviewers','Watermarks','Page color'], correct:1},
+  {cat:'headerfooter', prompt:'How do you enter the header or footer editing area?', options:['Right-click and print','Double-click the top or bottom margin area','Press Ctrl+S','Open the Review tab'], correct:1},
+  {cat:'headerfooter', prompt:'A footer commonly includes…', options:['A watermark image only','The date or a short label','A page border','The Design tab'], correct:1},
+  {cat:'headerfooter', prompt:'A header showing the school name appears…', options:['Only on the last page','At the top of every page','At the bottom of page one','Inside a page border only'], correct:1},
+  {cat:'headerfooter', prompt:'Combining watermark, color, border, page numbers, and header/footer creates…', options:['A slower computer','A complete, well-formatted document','A corrupted file','A smaller file size only'], correct:1}
+];
+
+let newOptCount = 0;
+
+/* ---------------- STATE ---------------- */
+let mode = 'solo';
+let timerMinutes = 2;
+let timeLeft = 120;
+let timerId = null;
+let deck = [];
+let deckIndex = 0;
+
+const featureOrder = ['watermark','color','border','pagenum','headerfooter'];
+
+let solo = { score:0, streak:0, bestStreak:0, correct:0, answered:0, unlocked:new Set() };
+let team = { na:'Team A', nb:'Team B', sa:0, sb:0, unlockedA:new Set(), unlockedB:new Set(), turn:'a' };
+
+/* ---------------- SETUP LOGIC ---------------- */
+function selectMode(m){
+  mode = m;
+  document.getElementById('mode-solo').classList.toggle('selected', m==='solo');
+  document.getElementById('mode-team').classList.toggle('selected', m==='team');
+  document.getElementById('team-name-row').classList.toggle('hidden', m!=='team');
+}
+function selectTimer(min){
+  timerMinutes = min;
+  document.getElementById('t1min').classList.toggle('selected', min===1);
+  document.getElementById('t2min').classList.toggle('selected', min===2);
+}
+function updateBankCount(){ document.getElementById('bank-count').textContent = questions.length + ' questions ready in the bank'; }
+updateBankCount();
+
+function backToSetup(){
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+}
+
+/* ---------------- START ---------------- */
+function shuffledDeck(){
+  let d = questions.slice();
+  for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+function resetPage(el){
+  el.className = 'page';
+}
+
+function startGame(){
+  if(questions.length<2){ alert('Add at least 2 questions to the bank first.'); return; }
+  deck = shuffledDeck(); deckIndex = 0;
+  timeLeft = timerMinutes*60;
+
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('game').classList.remove('hidden');
+
+  resetPage(document.getElementById('page-a'));
+  resetPage(document.getElementById('page-b'));
+
+  if(mode==='solo'){
+    solo = { score:0, streak:0, bestStreak:0, correct:0, answered:0, unlocked:new Set() };
+    document.getElementById('hud-right').classList.add('hidden');
+    document.getElementById('slot-b').classList.add('hidden');
+    document.getElementById('turn-block').classList.add('hidden');
+    document.getElementById('left-lbl').textContent = 'Score';
+    document.getElementById('a-name').textContent = 'You';
+    document.getElementById('doc-progress-solo').classList.remove('hidden');
+    renderSoloHud();
+  } else {
+    team.na = document.getElementById('team1name').value.trim() || 'Team A';
+    team.nb = document.getElementById('team2name').value.trim() || 'Team B';
+    team = { na:team.na, nb:team.nb, sa:0, sb:0, unlockedA:new Set(), unlockedB:new Set(), turn:'a' };
+    document.getElementById('hud-right').classList.remove('hidden');
+    document.getElementById('slot-b').classList.remove('hidden');
+    document.getElementById('turn-block').classList.remove('hidden');
+    document.getElementById('doc-progress-solo').classList.add('hidden');
+    document.getElementById('left-lbl').textContent = team.na;
+    document.getElementById('right-lbl').textContent = team.nb;
+    document.getElementById('a-name').textContent = team.na;
+    document.getElementById('b-name').textContent = team.nb;
+    renderTeamHud();
+    updateTurnBanner();
+  }
+
+  loadQuestion();
+  startTimer();
+}
+
+/* ---------------- TIMER ---------------- */
+function startTimer(){
+  clearInterval(timerId);
+  updateTimerDisplay();
+  timerId = setInterval(()=>{
+    timeLeft--; updateTimerDisplay();
+    if(timeLeft<=0){ clearInterval(timerId); endGame(); }
+  },1000);
+}
+function updateTimerDisplay(){
+  const m=Math.floor(timeLeft/60), s=timeLeft%60;
+  document.getElementById('timer-num').textContent = m+':'+String(s).padStart(2,'0');
+  const pct = Math.max(0,(timeLeft/(timerMinutes*60))*100);
+  document.querySelector('.timer-dial').style.setProperty('--pct', pct);
+}
+
+/* ---------------- QUESTION FLOW ---------------- */
+const catLabels = { watermark:'Watermark', color:'Page Color', border:'Page Borders', pagenum:'Page Numbers', headerfooter:'Header & Footer' };
+
+function loadQuestion(){
+  if(deckIndex>=deck.length){ deck = shuffledDeck(); deckIndex=0; }
+  const q = deck[deckIndex];
+  document.getElementById('q-feedback').textContent=''; document.getElementById('q-feedback').className='feedback';
+
+  const badge = document.getElementById('cat-badge');
+  badge.textContent = catLabels[q.cat];
+  badge.className = 'cat-badge ' + q.cat;
+
+  document.getElementById('q-prompt').textContent = q.prompt;
+  const wrap = document.getElementById('q-options'); wrap.innerHTML='';
+  q.options.forEach((opt,idx)=>{
+    const b=document.createElement('button'); b.className='opt-btn'; b.textContent=opt;
+    b.onclick=()=>answer(idx,q); wrap.appendChild(b);
+  });
+
+  if(mode==='team') updateTurnBanner();
+}
+function updateTurnBanner(){
+  const el = document.getElementById('turn-banner');
+  el.textContent = (team.turn==='a'?team.na:team.nb) + "'s turn";
+  el.className = 'turn-banner ' + team.turn;
+}
+
+function applyFeature(pageEl, cat){
+  const map = { watermark:'has-watermark', color:'has-color', border:'has-border', pagenum:'has-pagenum', headerfooter:null };
+  if(cat==='headerfooter'){ pageEl.classList.add('has-header'); pageEl.classList.add('has-footer'); }
+  else pageEl.classList.add(map[cat]);
+}
+
+function answer(idx,q){
+  const buttons = document.querySelectorAll('#q-options .opt-btn');
+  buttons.forEach(b=>b.disabled=true);
+  const correct = idx===q.correct;
+  buttons[idx].classList.add(correct?'correct':'wrong');
+  if(!correct) buttons[q.correct].classList.add('correct');
+
+  const fb = document.getElementById('q-feedback');
+  fb.textContent = correct ? 'Applied! Great click.' : 'Not quite — see the highlighted answer.';
+  fb.className = 'feedback ' + (correct?'good':'bad');
+
+  if(mode==='solo'){
+    solo.answered++;
+    if(correct){
+      solo.correct++; solo.streak++; solo.bestStreak=Math.max(solo.bestStreak,solo.streak);
+      solo.score += 10 + (solo.streak>=3?5:0);
+      if(!solo.unlocked.has(q.cat)){
+        solo.unlocked.add(q.cat);
+        applyFeature(document.getElementById('page-a'), q.cat);
+      }
+      document.getElementById('doc-progress-solo').textContent = 'Features applied: ' + solo.unlocked.size + ' / 5';
+    } else { solo.streak = 0; }
+    renderSoloHud();
+  } else {
+    const turn = team.turn;
+    if(correct){
+      if(turn==='a'){ team.sa++; if(!team.unlockedA.has(q.cat)){ team.unlockedA.add(q.cat); applyFeature(document.getElementById('page-a'), q.cat); } }
+      else { team.sb++; if(!team.unlockedB.has(q.cat)){ team.unlockedB.add(q.cat); applyFeature(document.getElementById('page-b'), q.cat); } }
+    }
+    renderTeamHud();
+    team.turn = team.turn==='a' ? 'b' : 'a';
+
+    if(team.unlockedA.size>=5 || team.unlockedB.size>=5){
+      clearInterval(timerId);
+      setTimeout(endGame, 700);
+      return;
+    }
+  }
+
+  deckIndex++;
+  setTimeout(()=>{ if(timeLeft>0) loadQuestion(); }, 850);
+}
+
+function renderSoloHud(){
+  document.getElementById('left-num').textContent = solo.score;
+  document.getElementById('streak-num').textContent = solo.streak;
+}
+function renderTeamHud(){
+  document.getElementById('left-num').textContent = team.sa;
+  document.getElementById('right-num').textContent = team.sb;
+}
+
+/* ---------------- END ---------------- */
+function endGame(){
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('results').classList.remove('hidden');
+  const statWrap = document.getElementById('res-stats'); statWrap.innerHTML='';
+
+  if(mode==='solo'){
+    document.getElementById('res-title').textContent = 'Design Dash complete!';
+    document.getElementById('res-sub').textContent = solo.unlocked.size + ' of 5 features applied to your document.';
+    const acc = solo.answered ? Math.round((solo.correct/solo.answered)*100) : 0;
+    [ {num:solo.score,lbl:'Final score'}, {num:acc+'%',lbl:'Accuracy'}, {num:solo.bestStreak,lbl:'Best streak'} ].forEach(s=>{
+      const el=document.createElement('div'); el.className='stat';
+      el.innerHTML='<div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div>'; statWrap.appendChild(el);
+    });
+  } else {
+    const aDone = team.unlockedA.size, bDone = team.unlockedB.size;
+    let title;
+    if(aDone===bDone) title = "It's a tie on features — check the score!";
+    else title = (aDone>bDone?team.na:team.nb) + ' finished their document first!';
+    document.getElementById('res-title').textContent = title;
+    document.getElementById('res-sub').textContent = team.na+': '+aDone+'/5 features · '+team.nb+': '+bDone+'/5 features';
+    [ {num:team.sa,lbl:team.na}, {num:team.sb,lbl:team.nb}, {num:(team.sa+team.sb),lbl:'Total answered'} ].forEach(s=>{
+      const el=document.createElement('div'); el.className='stat';
+      el.innerHTML='<div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div>'; statWrap.appendChild(el);
+    });
+  }
+}
+
+/* ---------------- EDITOR ---------------- */
+function openEditor(){ renderQList(); resetNewForm(); document.getElementById('editor-bg').classList.add('open'); }
+function closeEditor(){ document.getElementById('editor-bg').classList.remove('open'); updateBankCount(); }
+function renderQList(){
+  const wrap = document.getElementById('q-list'); wrap.innerHTML='';
+  questions.forEach((q,i)=>{
+    const div=document.createElement('div'); div.className='q-item';
+    div.innerHTML = '<div class="qtop"><p>'+q.prompt+'</p><button class="del-btn" onclick="deleteQuestion('+i+')">Remove</button></div>' +
+      '<div class="cat">'+catLabels[q.cat]+' · Correct: '+q.options[q.correct]+'</div>';
+    wrap.appendChild(div);
+  });
+}
+function deleteQuestion(i){ questions.splice(i,1); renderQList(); }
+function resetNewForm(){
+  newOptCount=0;
+  document.getElementById('new-prompt').value='';
+  document.getElementById('new-opts').innerHTML='';
+  addOptionField(); addOptionField();
+}
+function addOptionField(){
+  if(newOptCount>=4) return;
+  const idx=newOptCount++;
+  const row=document.createElement('div'); row.className='opt-row';
+  row.innerHTML = '<input type="radio" name="new-correct" value="'+idx+'" '+(idx===0?'checked':'')+'>' +
+    '<input type="text" id="new-opt-'+idx+'" placeholder="Option '+(idx+1)+'">';
+  document.getElementById('new-opts').appendChild(row);
+}
+function saveNewQuestion(){
+  const cat = document.getElementById('new-cat').value;
+  const prompt = document.getElementById('new-prompt').value.trim();
+  if(!prompt){ alert('Please write the question prompt.'); return; }
+  const opts=[];
+  for(let i=0;i<newOptCount;i++){ const el=document.getElementById('new-opt-'+i); if(el && el.value.trim()) opts.push(el.value.trim()); }
+  if(opts.length<2){ alert('Please provide at least two options.'); return; }
+  const radios=document.getElementsByName('new-correct'); let correctIdx=0;
+  radios.forEach(r=>{ if(r.checked) correctIdx=parseInt(r.value); });
+  if(correctIdx>=opts.length) correctIdx=0;
+  questions.push({cat, prompt, options:opts, correct:correctIdx});
+  renderQList(); resetNewForm();
+}
+</script>
+</body>
+</html>
